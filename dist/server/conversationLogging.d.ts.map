@@ -1,0 +1,1 @@
+{"version":3,"file":"conversationLogging.d.ts","sourceRoot":"","sources":["../../src/server/conversationLogging.ts"],"names":[],"mappings":"AAAA,OAAO,KAAK,EAAE,SAAS,EAAE,MAAM,iBAAiB,CAAC;AAGjD,wBAAgB,sBAAsB,CAClC,SAAS,EAAE,SAAS,EACpB,WAAW,EAAE,MAAM,EACnB,UAAU,EAAE,MAAM,GAAG,SAAS,EAC9B,WAAW,EAAE,MAAM,GAAG,KAAK,EAC3B,cAAc,EAAE,MAAM,GACvB,IAAI,CAWN"}

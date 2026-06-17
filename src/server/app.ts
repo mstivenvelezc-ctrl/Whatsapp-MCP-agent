@@ -1,24 +1,20 @@
 import express, { type Express } from "express";
 import helmet from "helmet";
 import rateLimit from "express-rate-limit";
-import type { Agent } from "../agent/agent.js";
+import type Anthropic from "@anthropic-ai/sdk";
 import type { SessionStore } from "../agent/session.js";
-import type { WhatsappClient } from "../whatsapp/client.js";
-import type { CrmClient } from "../crm/types.js";
 import { healthRouter } from "./routes/health.route.js";
-import { whatsappWebhookRouter } from "./routes/whatsappWebhook.route.js";
+import { internalAgentRouter } from "./routes/internalAgent.route.js";
 import { errorHandler, notFoundHandler } from "./middleware/errorHandler.js";
 
 export interface AppDeps {
-    agent: Agent;
     sessionStore: SessionStore;
-    whatsappClient: WhatsappClient;
-    crmClient: CrmClient;
-    whatsappVerifyToken: string;
-    whatsappAppSecret: string;
+    anthropic: Anthropic;
+    model: string;
+    internalAgentSecret: string;
 }
 
-const webhookRateLimiter = rateLimit({
+const internalRateLimiter = rateLimit({
     windowMs: 60_000,
     limit: 120,
     standardHeaders: true,
@@ -30,25 +26,17 @@ export function createApp(deps: AppDeps): Express {
 
     app.disable("x-powered-by");
     app.use(helmet());
-    app.use(
-        express.json({
-            verify: (req, _res, buf) => {
-                (req as express.Request).rawBody = buf;
-            },
-        }),
-    );
+    app.use(express.json());
 
     app.use("/health", healthRouter());
     app.use(
-        "/webhooks/whatsapp",
-        webhookRateLimiter,
-        whatsappWebhookRouter({
-            agent: deps.agent,
+        "/internal",
+        internalRateLimiter,
+        internalAgentRouter({
+            anthropic: deps.anthropic,
+            model: deps.model,
             sessionStore: deps.sessionStore,
-            whatsappClient: deps.whatsappClient,
-            crmClient: deps.crmClient,
-            verifyToken: deps.whatsappVerifyToken,
-            appSecret: deps.whatsappAppSecret,
+            internalAgentSecret: deps.internalAgentSecret,
         }),
     );
 

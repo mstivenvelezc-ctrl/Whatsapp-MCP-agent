@@ -1,6 +1,8 @@
 import type Anthropic from "@anthropic-ai/sdk";
 export type ConversationStage = "welcome" | "menu" | "scheduling_appointment" | "handed_off_to_advisor" | "closed";
 export interface ConversationSession {
+    /** Clave interna del store. Para uso multi-tenant suele ser `${companyId}:${phone}`. */
+    key: string;
     phone: string;
     contactName: string | undefined;
     stage: ConversationStage;
@@ -9,8 +11,8 @@ export interface ConversationSession {
 }
 export declare class SessionStore {
     private readonly sessions;
-    getOrCreate(phone: string, contactName: string | undefined): ConversationSession;
+    getOrCreate(key: string, phone: string, contactName: string | undefined): ConversationSession;
     save(session: ConversationSession): void;
-    reset(phone: string): void;
+    reset(key: string): void;
 }
 //# sourceMappingURL=session.d.ts.map

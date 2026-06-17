@@ -5,6 +5,7 @@ import type { ConversationSession } from "../agent/session.js";
 
 function buildSession(overrides: Partial<ConversationSession> = {}): ConversationSession {
     return {
+        key: "+15551234567",
         phone: "+15551234567",
         contactName: "Jane Doe",
         stage: "welcome",

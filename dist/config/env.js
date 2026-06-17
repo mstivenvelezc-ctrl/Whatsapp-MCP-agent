@@ -4,13 +4,7 @@ const envSchema = z.object({
     PORT: z.coerce.number().int().positive().default(3000),
     ANTHROPIC_API_KEY: z.string().min(1, "ANTHROPIC_API_KEY is required"),
     ANTHROPIC_MODEL: z.string().default("claude-sonnet-4-6"),
-    WHATSAPP_ACCESS_TOKEN: z.string().min(1, "WHATSAPP_ACCESS_TOKEN is required"),
-    WHATSAPP_PHONE_NUMBER_ID: z.string().min(1, "WHATSAPP_PHONE_NUMBER_ID is required"),
-    WHATSAPP_VERIFY_TOKEN: z.string().min(1, "WHATSAPP_VERIFY_TOKEN is required"),
-    WHATSAPP_APP_SECRET: z.string().min(1, "WHATSAPP_APP_SECRET is required"),
-    WHATSAPP_API_VERSION: z.string().default("v21.0"),
-    CRM_BASE_URL: z.string().url("CRM_BASE_URL must be a valid URL"),
-    CRM_API_KEY: z.string().min(1, "CRM_API_KEY is required"),
+    INTERNAL_AGENT_SECRET: z.string().min(1, "INTERNAL_AGENT_SECRET is required"),
 });
 let cachedEnv;
 export function loadEnv(source = process.env) {

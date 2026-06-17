@@ -3,12 +3,7 @@ import { loadEnv, resetEnvCacheForTests } from "./env.js";
 
 const VALID_ENV = {
     ANTHROPIC_API_KEY: "sk-ant-test",
-    WHATSAPP_ACCESS_TOKEN: "wa-token",
-    WHATSAPP_PHONE_NUMBER_ID: "12345",
-    WHATSAPP_VERIFY_TOKEN: "verify-token",
-    WHATSAPP_APP_SECRET: "app-secret",
-    CRM_BASE_URL: "https://crm.test",
-    CRM_API_KEY: "crm-key",
+    INTERNAL_AGENT_SECRET: "internal-secret",
 };
 
 beforeEach(() => {
@@ -21,7 +16,7 @@ describe("loadEnv", () => {
 
         expect(env.PORT).toBe(3000);
         expect(env.NODE_ENV).toBe("development");
-        expect(env.WHATSAPP_API_VERSION).toBe("v21.0");
+        expect(env.ANTHROPIC_MODEL).toBe("claude-sonnet-4-6");
     });
 
     it("throws a descriptive error when a required variable is missing", () => {
@@ -29,7 +24,8 @@ describe("loadEnv", () => {
         expect(() => loadEnv(incomplete)).toThrow(/ANTHROPIC_API_KEY/);
     });
 
-    it("throws when CRM_BASE_URL is not a valid URL", () => {
-        expect(() => loadEnv({ ...VALID_ENV, CRM_BASE_URL: "not-a-url" })).toThrow(/CRM_BASE_URL/);
+    it("throws when INTERNAL_AGENT_SECRET is missing", () => {
+        const { INTERNAL_AGENT_SECRET, ...incomplete } = VALID_ENV;
+        expect(() => loadEnv(incomplete)).toThrow(/INTERNAL_AGENT_SECRET/);
     });
 });

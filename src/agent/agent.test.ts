@@ -40,7 +40,7 @@ describe("Agent.respond", () => {
     it("returns the assistant text when there is no tool use", async () => {
         const create = vi.fn().mockResolvedValue(textMessage("¡Hola! ¿En qué te ayudo?"));
         const { agent, sessionStore } = buildAgent(create);
-        const session = sessionStore.getOrCreate("+1555", "Jane");
+        const session = sessionStore.getOrCreate("+1555", "+1555", "Jane");
 
         const reply = await agent.respond(session, "hola");
 
@@ -55,7 +55,7 @@ describe("Agent.respond", () => {
             .mockResolvedValueOnce(toolUseMessage("show_welcome_menu", {}))
             .mockResolvedValueOnce(textMessage("Aquí tienes el menú"));
         const { agent, sessionStore } = buildAgent(create);
-        const session = sessionStore.getOrCreate("+1555", "Jane");
+        const session = sessionStore.getOrCreate("+1555", "+1555", "Jane");
 
         const reply = await agent.respond(session, "hola");
 
@@ -72,7 +72,7 @@ describe("Agent.respond", () => {
     it("does not call Anthropic when the conversation was handed off to an advisor", async () => {
         const create = vi.fn();
         const { agent, sessionStore } = buildAgent(create);
-        const session = sessionStore.getOrCreate("+1555", "Jane");
+        const session = sessionStore.getOrCreate("+1555", "+1555", "Jane");
         session.stage = "handed_off_to_advisor";
 
         const reply = await agent.respond(session, "¿sigues ahí?");
@@ -84,7 +84,7 @@ describe("Agent.respond", () => {
     it("gives up with a fallback message after too many tool-use iterations", async () => {
         const create = vi.fn().mockResolvedValue(toolUseMessage("show_welcome_menu", {}));
         const { agent, sessionStore } = buildAgent(create);
-        const session = sessionStore.getOrCreate("+1555", "Jane");
+        const session = sessionStore.getOrCreate("+1555", "+1555", "Jane");
 
         const reply = await agent.respond(session, "hola");
 

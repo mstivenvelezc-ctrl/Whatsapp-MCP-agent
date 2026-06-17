@@ -1,137 +1,84 @@
-import { createHmac } from "node:crypto";
 import { describe, expect, it, vi } from "vitest";
 import request from "supertest";
+import type Anthropic from "@anthropic-ai/sdk";
 import { createApp } from "./app.js";
 import { SessionStore } from "../agent/session.js";
-import { MockCrmClient } from "../crm/mockCrmClient.js";
-import type { Agent } from "../agent/agent.js";
-import type { WhatsappClient } from "../whatsapp/client.js";
 
-const APP_SECRET = "test-app-secret";
-const VERIFY_TOKEN = "test-verify-token";
+const INTERNAL_AGENT_SECRET = "test-internal-secret";
 
-function sign(body: string): string {
-    return `sha256=${createHmac("sha256", APP_SECRET).update(body).digest("hex")}`;
-}
-
-function buildApp(agentRespond: ReturnType<typeof vi.fn>) {
-    const sendTextMessage = vi.fn().mockResolvedValue(undefined);
-    const agent = { respond: agentRespond } as unknown as Agent;
-    const whatsappClient = { sendTextMessage } as unknown as WhatsappClient;
-    const crmClient = new MockCrmClient();
+function buildApp() {
+    const anthropic = { messages: { create: vi.fn() } } as unknown as Anthropic;
 
     const app = createApp({
-        agent,
         sessionStore: new SessionStore(),
-        whatsappClient,
-        crmClient,
-        whatsappVerifyToken: VERIFY_TOKEN,
-        whatsappAppSecret: APP_SECRET,
+        anthropic,
+        model: "claude-sonnet-4-6",
+        internalAgentSecret: INTERNAL_AGENT_SECRET,
     });
 
-    return { app, sendTextMessage, crmClient };
-}
-
-function incomingMessagePayload(text: string) {
-    return JSON.stringify({
-        object: "whatsapp_business_account",
-        entry: [
-            {
-                id: "entry-1",
-                changes: [
-                    {
-                        field: "messages",
-                        value: {
-                            messaging_product: "whatsapp",
-                            contacts: [{ profile: { name: "Jane" }, wa_id: "+15551234567" }],
-                            messages: [{ from: "+15551234567", id: "wamid.1", type: "text", text: { body: text } }],
-                        },
-                    },
-                ],
-            },
-        ],
-    });
+    return { app, anthropic };
 }
 
 describe("GET /health", () => {
     it("returns ok", async () => {
-        const { app } = buildApp(vi.fn());
+        const { app } = buildApp();
         const response = await request(app).get("/health");
         expect(response.status).toBe(200);
         expect(response.body).toEqual({ status: "ok" });
     });
 });
 
-describe("GET /webhooks/whatsapp", () => {
-    it("echoes the challenge when the verify token matches", async () => {
-        const { app } = buildApp(vi.fn());
-        const response = await request(app)
-            .get("/webhooks/whatsapp")
-            .query({ "hub.mode": "subscribe", "hub.verify_token": VERIFY_TOKEN, "hub.challenge": "12345" });
+describe("POST /internal/respond", () => {
+    function textMessage(text: string): Anthropic.Message {
+        return {
+            id: "msg_1",
+            type: "message",
+            role: "assistant",
+            model: "claude-sonnet-4-6",
+            stop_reason: "end_turn",
+            stop_sequence: null,
+            content: [{ type: "text", text, citations: null }],
+            usage: { input_tokens: 1, output_tokens: 1 },
+        } as unknown as Anthropic.Message;
+    }
 
-        expect(response.status).toBe(200);
-        expect(response.text).toBe("12345");
-    });
+    function validBody(overrides: Record<string, unknown> = {}) {
+        return {
+            companyId: 1,
+            crmBaseUrl: "https://crm.test",
+            crmApiKey: "token",
+            phone: "+15551234567",
+            contactName: "Jane",
+            message: "hola",
+            ...overrides,
+        };
+    }
 
-    it("rejects an incorrect verify token", async () => {
-        const { app } = buildApp(vi.fn());
-        const response = await request(app)
-            .get("/webhooks/whatsapp")
-            .query({ "hub.mode": "subscribe", "hub.verify_token": "wrong", "hub.challenge": "12345" });
-
-        expect(response.status).toBe(403);
-    });
-});
-
-describe("POST /webhooks/whatsapp", () => {
-    it("rejects requests with an invalid signature", async () => {
-        const { app } = buildApp(vi.fn());
-        const body = incomingMessagePayload("hola");
-
-        const response = await request(app)
-            .post("/webhooks/whatsapp")
-            .set("Content-Type", "application/json")
-            .set("X-Hub-Signature-256", "sha256=invalid")
-            .send(body);
-
+    it("rejects requests without a valid internal secret", async () => {
+        const { app } = buildApp();
+        const response = await request(app).post("/internal/respond").send(validBody());
         expect(response.status).toBe(401);
     });
 
-    it("processes an incoming message and replies through WhatsApp", async () => {
-        const agentRespond = vi.fn().mockResolvedValue("¡Hola! ¿En qué te ayudo?");
-        const { app, sendTextMessage, crmClient } = buildApp(agentRespond);
-        const body = incomingMessagePayload("hola");
-
+    it("rejects an invalid body", async () => {
+        const { app } = buildApp();
         const response = await request(app)
-            .post("/webhooks/whatsapp")
-            .set("Content-Type", "application/json")
-            .set("X-Hub-Signature-256", sign(body))
-            .send(body);
-
-        expect(response.status).toBe(200);
-        expect(agentRespond).toHaveBeenCalledTimes(1);
-        expect(sendTextMessage).toHaveBeenCalledWith("+15551234567", "¡Hola! ¿En qué te ayudo?");
-
-        await new Promise((resolve) => setImmediate(resolve));
-        const logged = crmClient.listLoggedMessages();
-        expect(logged).toEqual([
-            expect.objectContaining({ messageType: "USER", messageContent: "hola" }),
-            expect.objectContaining({ messageType: "BOT", messageContent: "¡Hola! ¿En qué te ayudo?" }),
-        ]);
+            .post("/internal/respond")
+            .set("X-Internal-Secret", INTERNAL_AGENT_SECRET)
+            .send({ companyId: 1 });
+        expect(response.status).toBe(400);
     });
 
-    it("does not send a WhatsApp reply when the agent stays silent (handed off to advisor)", async () => {
-        const agentRespond = vi.fn().mockResolvedValue(undefined);
-        const { app, sendTextMessage } = buildApp(agentRespond);
-        const body = incomingMessagePayload("hola");
+    it("returns the agent reply for a valid request", async () => {
+        const { app, anthropic } = buildApp();
+        (anthropic.messages.create as ReturnType<typeof vi.fn>).mockResolvedValue(textMessage("¡Hola!"));
 
         const response = await request(app)
-            .post("/webhooks/whatsapp")
-            .set("Content-Type", "application/json")
-            .set("X-Hub-Signature-256", sign(body))
-            .send(body);
+            .post("/internal/respond")
+            .set("X-Internal-Secret", INTERNAL_AGENT_SECRET)
+            .send(validBody());
 
         expect(response.status).toBe(200);
-        expect(sendTextMessage).not.toHaveBeenCalled();
+        expect(response.body).toEqual({ reply: "¡Hola!" });
     });
 });
