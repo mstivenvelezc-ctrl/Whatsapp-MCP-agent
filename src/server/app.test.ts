@@ -3,6 +3,7 @@ import { describe, expect, it, vi } from "vitest";
 import request from "supertest";
 import { createApp } from "./app.js";
 import { SessionStore } from "../agent/session.js";
+import { MockCrmClient } from "../crm/mockCrmClient.js";
 import type { Agent } from "../agent/agent.js";
 import type { WhatsappClient } from "../whatsapp/client.js";
 
@@ -17,16 +18,18 @@ function buildApp(agentRespond: ReturnType<typeof vi.fn>) {
     const sendTextMessage = vi.fn().mockResolvedValue(undefined);
     const agent = { respond: agentRespond } as unknown as Agent;
     const whatsappClient = { sendTextMessage } as unknown as WhatsappClient;
+    const crmClient = new MockCrmClient();
 
     const app = createApp({
         agent,
         sessionStore: new SessionStore(),
         whatsappClient,
+        crmClient,
         whatsappVerifyToken: VERIFY_TOKEN,
         whatsappAppSecret: APP_SECRET,
     });
 
-    return { app, sendTextMessage };
+    return { app, sendTextMessage, crmClient };
 }
 
 function incomingMessagePayload(text: string) {
@@ -96,7 +99,7 @@ describe("POST /webhooks/whatsapp", () => {
 
     it("processes an incoming message and replies through WhatsApp", async () => {
         const agentRespond = vi.fn().mockResolvedValue("¡Hola! ¿En qué te ayudo?");
-        const { app, sendTextMessage } = buildApp(agentRespond);
+        const { app, sendTextMessage, crmClient } = buildApp(agentRespond);
         const body = incomingMessagePayload("hola");
 
         const response = await request(app)
@@ -108,6 +111,13 @@ describe("POST /webhooks/whatsapp", () => {
         expect(response.status).toBe(200);
         expect(agentRespond).toHaveBeenCalledTimes(1);
         expect(sendTextMessage).toHaveBeenCalledWith("+15551234567", "¡Hola! ¿En qué te ayudo?");
+
+        await new Promise((resolve) => setImmediate(resolve));
+        const logged = crmClient.listLoggedMessages();
+        expect(logged).toEqual([
+            expect.objectContaining({ messageType: "USER", messageContent: "hola" }),
+            expect.objectContaining({ messageType: "BOT", messageContent: "¡Hola! ¿En qué te ayudo?" }),
+        ]);
     });
 
     it("does not send a WhatsApp reply when the agent stays silent (handed off to advisor)", async () => {

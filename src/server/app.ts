@@ -4,6 +4,7 @@ import rateLimit from "express-rate-limit";
 import type { Agent } from "../agent/agent.js";
 import type { SessionStore } from "../agent/session.js";
 import type { WhatsappClient } from "../whatsapp/client.js";
+import type { CrmClient } from "../crm/types.js";
 import { healthRouter } from "./routes/health.route.js";
 import { whatsappWebhookRouter } from "./routes/whatsappWebhook.route.js";
 import { errorHandler, notFoundHandler } from "./middleware/errorHandler.js";
@@ -12,6 +13,7 @@ export interface AppDeps {
     agent: Agent;
     sessionStore: SessionStore;
     whatsappClient: WhatsappClient;
+    crmClient: CrmClient;
     whatsappVerifyToken: string;
     whatsappAppSecret: string;
 }
@@ -44,6 +46,7 @@ export function createApp(deps: AppDeps): Express {
             agent: deps.agent,
             sessionStore: deps.sessionStore,
             whatsappClient: deps.whatsappClient,
+            crmClient: deps.crmClient,
             verifyToken: deps.whatsappVerifyToken,
             appSecret: deps.whatsappAppSecret,
         }),

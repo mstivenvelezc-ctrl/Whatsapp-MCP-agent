@@ -24,6 +24,7 @@ export function createApp(deps) {
         agent: deps.agent,
         sessionStore: deps.sessionStore,
         whatsappClient: deps.whatsappClient,
+        crmClient: deps.crmClient,
         verifyToken: deps.whatsappVerifyToken,
         appSecret: deps.whatsappAppSecret,
     }));

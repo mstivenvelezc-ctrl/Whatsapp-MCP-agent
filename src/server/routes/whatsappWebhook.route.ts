@@ -2,6 +2,7 @@ import { Router } from "express";
 import type { Agent } from "../../agent/agent.js";
 import type { SessionStore } from "../../agent/session.js";
 import type { WhatsappClient } from "../../whatsapp/client.js";
+import type { CrmClient } from "../../crm/types.js";
 import { extractIncomingMessages, whatsappWebhookPayloadSchema } from "../../whatsapp/types.js";
 import { logger } from "../../lib/logger.js";
 import { asyncHandler } from "../middleware/asyncHandler.js";
@@ -11,8 +12,28 @@ export interface WhatsappWebhookRouterDeps {
     agent: Agent;
     sessionStore: SessionStore;
     whatsappClient: WhatsappClient;
+    crmClient: CrmClient;
     verifyToken: string;
     appSecret: string;
+}
+
+function logConversationMessage(
+    crmClient: CrmClient,
+    clientPhone: string,
+    clientName: string | undefined,
+    messageType: "USER" | "BOT",
+    messageContent: string,
+): void {
+    crmClient
+        .logMessage({
+            clientPhone,
+            messageType,
+            messageContent,
+            ...(clientName !== undefined ? { clientName } : {}),
+        })
+        .catch((error) => {
+            logger.warn("Failed to log conversation message in CRM", { clientPhone, messageType, error });
+        });
 }
 
 export function whatsappWebhookRouter(deps: WhatsappWebhookRouterDeps): Router {
@@ -46,11 +67,14 @@ export function whatsappWebhookRouter(deps: WhatsappWebhookRouterDeps): Router {
 
             for (const message of incomingMessages) {
                 const session = deps.sessionStore.getOrCreate(message.from, message.contactName);
+                logConversationMessage(deps.crmClient, message.from, message.contactName, "USER", message.text);
+
                 const reply = await deps.agent.respond(session, message.text);
                 deps.sessionStore.save(session);
 
                 if (reply) {
                     await deps.whatsappClient.sendTextMessage(message.from, reply);
+                    logConversationMessage(deps.crmClient, message.from, session.contactName, "BOT", reply);
                 }
             }
 

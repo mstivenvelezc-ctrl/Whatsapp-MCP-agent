@@ -4,12 +4,12 @@ import { logger } from "../lib/logger.js";
 import { createAnthropicClient } from "../agent/anthropicClient.js";
 import { Agent } from "../agent/agent.js";
 import { SessionStore } from "../agent/session.js";
-import { GenericRestCrmClient } from "../crm/genericRestCrmClient.js";
+import { RestCrmClient } from "../crm/restCrmClient.js";
 import { CloudApiWhatsappClient } from "../whatsapp/client.js";
 import { createApp } from "./app.js";
 function main() {
     const env = loadEnv();
-    const crmClient = new GenericRestCrmClient({ baseUrl: env.CRM_BASE_URL, apiKey: env.CRM_API_KEY });
+    const crmClient = new RestCrmClient({ baseUrl: env.CRM_BASE_URL, apiKey: env.CRM_API_KEY });
     const whatsappClient = new CloudApiWhatsappClient({
         accessToken: env.WHATSAPP_ACCESS_TOKEN,
         phoneNumberId: env.WHATSAPP_PHONE_NUMBER_ID,
@@ -22,6 +22,7 @@ function main() {
         agent,
         sessionStore,
         whatsappClient,
+        crmClient,
         whatsappVerifyToken: env.WHATSAPP_VERIFY_TOKEN,
         whatsappAppSecret: env.WHATSAPP_APP_SECRET,
     });

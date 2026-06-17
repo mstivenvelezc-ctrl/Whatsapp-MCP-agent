@@ -1,18 +1,20 @@
 import type { CreateAppointmentInput, CreateOrderInput, CrmAppointment, CrmClient, CrmOrder, CrmProduct, LogMessageInput } from "./types.js";
-export declare class MockCrmClient implements CrmClient {
-    private readonly appointments;
-    private readonly orders;
-    private readonly loggedMessages;
-    private nextId;
-    private nextOrderId;
+export interface RestCrmClientConfig {
+    baseUrl: string;
+    apiKey: string;
+    fetchImpl?: typeof fetch;
+}
+export declare class RestCrmClient implements CrmClient {
+    private readonly config;
+    private readonly fetchImpl;
+    constructor(config: RestCrmClientConfig);
     getAvailableDates(): Promise<string[]>;
-    getAvailableSlots(_date: string): Promise<string[]>;
+    getAvailableSlots(date: string): Promise<string[]>;
     createAppointment(input: CreateAppointmentInput): Promise<CrmAppointment>;
-    listAppointments(): CrmAppointment[];
     listActiveProducts(): Promise<CrmProduct[]>;
     createOrder(input: CreateOrderInput): Promise<CrmOrder>;
-    listOrders(): CrmOrder[];
     logMessage(input: LogMessageInput): Promise<void>;
-    listLoggedMessages(): LogMessageInput[];
+    private request;
+    private parseJson;
 }
-//# sourceMappingURL=mockCrmClient.d.ts.map
+//# sourceMappingURL=restCrmClient.d.ts.map

@@ -1,32 +1,44 @@
-import { randomUUID } from "node:crypto";
-import type { CreateAppointmentInput, CrmAppointment, CrmClient, CrmContact } from "./types.js";
+import type {
+    CreateAppointmentInput,
+    CreateOrderInput,
+    CrmAppointment,
+    CrmClient,
+    CrmOrder,
+    CrmProduct,
+    LogMessageInput,
+} from "./types.js";
+
+const DEFAULT_AVAILABLE_DATES = ["2030-01-02", "2030-01-03", "2030-01-04", "2030-01-06"];
+const DEFAULT_AVAILABLE_SLOTS = ["08:00", "08:30", "09:00"];
+const DEFAULT_PRODUCTS: CrmProduct[] = [
+    { id: 1, name: "Producto demo", price: 100000, currency: "COP", isActive: true },
+];
 
 export class MockCrmClient implements CrmClient {
-    private readonly contactsByPhone = new Map<string, CrmContact>();
     private readonly appointments: CrmAppointment[] = [];
+    private readonly orders: CrmOrder[] = [];
+    private readonly loggedMessages: LogMessageInput[] = [];
+    private nextId = 1;
+    private nextOrderId = 1;
 
-    async findContactByPhone(phone: string): Promise<CrmContact | undefined> {
-        return this.contactsByPhone.get(phone);
+    async getAvailableDates(): Promise<string[]> {
+        return [...DEFAULT_AVAILABLE_DATES];
     }
 
-    async createContact(input: { phone: string; fullName: string }): Promise<CrmContact> {
-        const contact: CrmContact = { id: randomUUID(), fullName: input.fullName, phone: input.phone };
-        this.contactsByPhone.set(input.phone, contact);
-        return contact;
+    async getAvailableSlots(_date: string): Promise<string[]> {
+        return [...DEFAULT_AVAILABLE_SLOTS];
     }
 
     async createAppointment(input: CreateAppointmentInput): Promise<CrmAppointment> {
-        let contact = await this.findContactByPhone(input.contact.phone);
-        if (!contact) {
-            contact = await this.createContact(input.contact);
-        }
-
         const appointment: CrmAppointment = {
-            id: randomUUID(),
-            contactId: contact.id,
-            startsAt: input.startsAt,
-            reason: input.reason,
-            status: "scheduled",
+            id: this.nextId++,
+            clientPhone: input.clientPhone,
+            appointmentDate: input.appointmentDate,
+            appointmentTime: input.appointmentTime,
+            status: "PENDING",
+            ...(input.clientName !== undefined ? { clientName: input.clientName } : {}),
+            ...(input.department !== undefined ? { department: input.department } : {}),
+            ...(input.notes !== undefined ? { notes: input.notes } : {}),
         };
         this.appointments.push(appointment);
         return appointment;
@@ -34,5 +46,53 @@ export class MockCrmClient implements CrmClient {
 
     listAppointments(): CrmAppointment[] {
         return [...this.appointments];
+    }
+
+    async listActiveProducts(): Promise<CrmProduct[]> {
+        return [...DEFAULT_PRODUCTS];
+    }
+
+    async createOrder(input: CreateOrderInput): Promise<CrmOrder> {
+        const items = input.items.map((item) => {
+            const product = DEFAULT_PRODUCTS.find((p) => p.id === item.productId);
+            if (!product) {
+                throw new Error(`Producto ${item.productId} no existe o no está activo`);
+            }
+            return {
+                productId: product.id,
+                productName: product.name,
+                quantity: item.quantity,
+                unitPrice: product.price,
+                subtotal: product.price * item.quantity,
+            };
+        });
+        const total = items.reduce((sum, item) => sum + item.subtotal, 0);
+
+        const order: CrmOrder = {
+            id: this.nextOrderId++,
+            clientPhone: input.clientPhone,
+            type: input.type,
+            status: "PENDIENTE",
+            subtotal: total,
+            discount: 0,
+            total,
+            items,
+            ...(input.clientName !== undefined ? { clientName: input.clientName } : {}),
+            ...(input.notes !== undefined ? { notes: input.notes } : {}),
+        };
+        this.orders.push(order);
+        return order;
+    }
+
+    listOrders(): CrmOrder[] {
+        return [...this.orders];
+    }
+
+    async logMessage(input: LogMessageInput): Promise<void> {
+        this.loggedMessages.push(input);
+    }
+
+    listLoggedMessages(): LogMessageInput[] {
+        return [...this.loggedMessages];
     }
 }

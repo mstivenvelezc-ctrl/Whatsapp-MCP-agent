@@ -4,15 +4,21 @@ import type { Tool, ToolContext } from "./types.js";
 import { ToolExecutionError, ToolValidationError } from "./errors.js";
 import { welcomeTool } from "./welcome.tool.js";
 import { selectServiceTool } from "./selectService.tool.js";
-import { findOrCreateContactTool } from "./findOrCreateContact.tool.js";
+import { listAvailableDatesTool } from "./listAvailableDates.tool.js";
+import { listAvailableSlotsTool } from "./listAvailableSlots.tool.js";
 import { scheduleAppointmentTool } from "./scheduleAppointment.tool.js";
+import { listProductsTool } from "./listProducts.tool.js";
+import { createOrderTool } from "./createOrder.tool.js";
 import { escalateToAdvisorTool } from "./escalateToAdvisor.tool.js";
 
 const tools: Tool[] = [
     welcomeTool,
     selectServiceTool,
-    findOrCreateContactTool,
+    listAvailableDatesTool,
+    listAvailableSlotsTool,
     scheduleAppointmentTool,
+    listProductsTool,
+    createOrderTool,
     escalateToAdvisorTool,
 ];
 

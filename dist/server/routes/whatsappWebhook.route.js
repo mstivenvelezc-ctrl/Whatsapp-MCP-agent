@@ -3,6 +3,18 @@ import { extractIncomingMessages, whatsappWebhookPayloadSchema } from "../../wha
 import { logger } from "../../lib/logger.js";
 import { asyncHandler } from "../middleware/asyncHandler.js";
 import { verifyWhatsappWebhookSignature } from "../middleware/verifyWhatsappWebhookSignature.js";
+function logConversationMessage(crmClient, clientPhone, clientName, messageType, messageContent) {
+    crmClient
+        .logMessage({
+        clientPhone,
+        messageType,
+        messageContent,
+        ...(clientName !== undefined ? { clientName } : {}),
+    })
+        .catch((error) => {
+        logger.warn("Failed to log conversation message in CRM", { clientPhone, messageType, error });
+    });
+}
 export function whatsappWebhookRouter(deps) {
     const router = Router();
     router.get("/", (req, res) => {
@@ -25,10 +37,12 @@ export function whatsappWebhookRouter(deps) {
         const incomingMessages = extractIncomingMessages(parsed.data);
         for (const message of incomingMessages) {
             const session = deps.sessionStore.getOrCreate(message.from, message.contactName);
+            logConversationMessage(deps.crmClient, message.from, message.contactName, "USER", message.text);
             const reply = await deps.agent.respond(session, message.text);
             deps.sessionStore.save(session);
             if (reply) {
                 await deps.whatsappClient.sendTextMessage(message.from, reply);
+                logConversationMessage(deps.crmClient, message.from, session.contactName, "BOT", reply);
             }
         }
         res.sendStatus(200);

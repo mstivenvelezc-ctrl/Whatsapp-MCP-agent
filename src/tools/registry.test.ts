@@ -22,8 +22,11 @@ describe("getToolDefinitions", () => {
         expect(names).toEqual([
             "show_welcome_menu",
             "select_service",
-            "find_or_create_contact",
+            "list_available_dates",
+            "list_available_slots",
             "schedule_appointment",
+            "list_products",
+            "create_order",
             "escalate_to_advisor",
         ]);
         for (const definition of definitions) {
@@ -85,14 +88,24 @@ describe("dispatchTool", () => {
         expect(session.stage).toBe("handed_off_to_advisor");
     });
 
-    it("find_or_create_contact creates a contact when none exists yet", async () => {
+    it("list_available_dates returns the dates from the CRM", async () => {
         const session = buildSession();
         const crmClient = new MockCrmClient();
 
-        const result = await dispatchTool("find_or_create_contact", { fullName: "Jane Doe" }, { session, crmClient });
+        const result = await dispatchTool("list_available_dates", {}, { session, crmClient });
 
         expect(result.isError).toBe(false);
-        expect(result.output).toMatchObject({ created: true });
+        expect(result.output).toMatchObject({ dates: expect.arrayContaining([expect.any(String)]) });
+    });
+
+    it("list_available_slots returns the slots for a given date", async () => {
+        const session = buildSession();
+        const crmClient = new MockCrmClient();
+
+        const result = await dispatchTool("list_available_slots", { date: "2030-01-02" }, { session, crmClient });
+
+        expect(result.isError).toBe(false);
+        expect(result.output).toMatchObject({ slots: expect.arrayContaining([expect.any(String)]) });
     });
 
     it("schedule_appointment rejects a date in the past", async () => {
@@ -101,7 +114,7 @@ describe("dispatchTool", () => {
 
         const result = await dispatchTool(
             "schedule_appointment",
-            { fullName: "Jane Doe", startsAt: "2000-01-01T10:00:00.000Z", reason: "demo" },
+            { fullName: "Jane Doe", appointmentDate: "2000-01-01", appointmentTime: "10:00" },
             { session, crmClient },
         );
 
@@ -111,16 +124,41 @@ describe("dispatchTool", () => {
     it("schedule_appointment creates the appointment and closes the session on success", async () => {
         const session = buildSession({ stage: "scheduling_appointment" });
         const crmClient = new MockCrmClient();
-        const futureDate = new Date(Date.now() + 1000 * 60 * 60 * 24).toISOString();
+        const futureDate = new Date(Date.now() + 1000 * 60 * 60 * 24).toISOString().slice(0, 10);
 
         const result = await dispatchTool(
             "schedule_appointment",
-            { fullName: "Jane Doe", startsAt: futureDate, reason: "demo" },
+            { fullName: "Jane Doe", appointmentDate: futureDate, appointmentTime: "10:00" },
             { session, crmClient },
         );
 
         expect(result.isError).toBe(false);
         expect(session.stage).toBe("closed");
         expect(crmClient.listAppointments()).toHaveLength(1);
+    });
+
+    it("list_products returns the CRM catalog", async () => {
+        const session = buildSession();
+        const crmClient = new MockCrmClient();
+
+        const result = await dispatchTool("list_products", {}, { session, crmClient });
+
+        expect(result.isError).toBe(false);
+        expect(result.output).toMatchObject({ products: expect.arrayContaining([expect.objectContaining({ id: 1 })]) });
+    });
+
+    it("create_order creates an order priced from the CRM catalog", async () => {
+        const session = buildSession();
+        const crmClient = new MockCrmClient();
+
+        const result = await dispatchTool(
+            "create_order",
+            { type: "PEDIDO", items: [{ productId: 1, quantity: 2 }] },
+            { session, crmClient },
+        );
+
+        expect(result.isError).toBe(false);
+        expect(crmClient.listOrders()).toHaveLength(1);
+        expect(crmClient.listOrders()[0]).toMatchObject({ total: 200000 });
     });
 });
