@@ -1,34 +1,33 @@
-import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
-import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
-import { registerListRepositoriesTool } from "../tools/listRepositories.js";
-import { registerCreateRepositoryTool } from "../tools/createRepository.js";
-import { registerCreateIssueTool } from "../tools/createIssue.js";
-import { registerListIssuesTool } from "../tools/listIssues.js";
-import { registerCreateCommitTool } from "../tools/createCommit.js";
-import { registerGetRepositoryTool } from "../tools/getRepository.js";
-import { registerDeleteIssueTool } from "../tools/deletIssue.js";
-import { registerDeleteRepositoryTool } from "../tools/deleteRepository.js";
-import { registerRevertToCommitTool } from "../tools/revertToCommit.js";
-export const server = new McpServer({
-    name: "mstivenvelezc-ctrl-agent",
-    version: "1.0.0",
-});
-async function main() {
-    registerGetRepositoryTool(server);
-    registerCreateRepositoryTool(server);
-    registerListRepositoriesTool(server);
-    registerCreateIssueTool(server);
-    registerListIssuesTool(server);
-    registerCreateCommitTool(server);
-    registerDeleteIssueTool(server);
-    registerDeleteRepositoryTool(server);
-    registerRevertToCommitTool(server);
-    const transport = new StdioServerTransport();
-    await server.connect(transport);
-    console.error("Server is running...");
+import "dotenv/config";
+import { loadEnv } from "../config/env.js";
+import { logger } from "../lib/logger.js";
+import { createAnthropicClient } from "../agent/anthropicClient.js";
+import { Agent } from "../agent/agent.js";
+import { SessionStore } from "../agent/session.js";
+import { GenericRestCrmClient } from "../crm/genericRestCrmClient.js";
+import { CloudApiWhatsappClient } from "../whatsapp/client.js";
+import { createApp } from "./app.js";
+function main() {
+    const env = loadEnv();
+    const crmClient = new GenericRestCrmClient({ baseUrl: env.CRM_BASE_URL, apiKey: env.CRM_API_KEY });
+    const whatsappClient = new CloudApiWhatsappClient({
+        accessToken: env.WHATSAPP_ACCESS_TOKEN,
+        phoneNumberId: env.WHATSAPP_PHONE_NUMBER_ID,
+        apiVersion: env.WHATSAPP_API_VERSION,
+    });
+    const anthropic = createAnthropicClient(env.ANTHROPIC_API_KEY);
+    const agent = new Agent({ anthropic, model: env.ANTHROPIC_MODEL, crmClient });
+    const sessionStore = new SessionStore();
+    const app = createApp({
+        agent,
+        sessionStore,
+        whatsappClient,
+        whatsappVerifyToken: env.WHATSAPP_VERIFY_TOKEN,
+        whatsappAppSecret: env.WHATSAPP_APP_SECRET,
+    });
+    app.listen(env.PORT, () => {
+        logger.info(`Server listening on port ${env.PORT}`);
+    });
 }
-main().catch((error) => {
-    console.error("Error starting the server:", error);
-    process.exit(1);
-});
+main();
 //# sourceMappingURL=index.js.map

@@ -41,5 +41,7 @@
     "moduleDetection": "force",
     "skipLibCheck": true,
     "esModuleInterop":true,
-  }
+  },
+  "include": ["src"],
+  "exclude": ["src/**/*.test.ts"]
 }

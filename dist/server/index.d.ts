@@ -1,3 +1,2 @@
-import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
-export declare const server: McpServer;
+import "dotenv/config";
 //# sourceMappingURL=index.d.ts.map
