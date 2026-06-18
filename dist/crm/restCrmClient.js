@@ -58,6 +58,14 @@ export class RestCrmClient {
             ...(input.clientName !== undefined ? { clientName: input.clientName } : {}),
         });
     }
+    async escalateToAgent(input) {
+        const response = await this.request("POST", "/api/ai/escalate", {
+            clientPhone: input.clientPhone,
+            requestText: input.requestText,
+            ...(input.clientName !== undefined ? { clientName: input.clientName } : {}),
+        });
+        return (await this.parseJson(response));
+    }
     async request(method, path, body) {
         try {
             const response = await this.fetchImpl(`${this.config.baseUrl}${path}`, {

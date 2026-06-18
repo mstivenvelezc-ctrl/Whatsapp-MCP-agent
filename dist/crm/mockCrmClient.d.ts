@@ -1,8 +1,9 @@
-import type { CreateAppointmentInput, CreateOrderInput, CrmAppointment, CrmClient, CrmOrder, CrmProduct, LogMessageInput } from "./types.js";
+import type { CreateAppointmentInput, CreateOrderInput, CrmAppointment, CrmClient, CrmOrder, CrmProduct, EscalateToAgentInput, EscalateToAgentResult, LogMessageInput } from "./types.js";
 export declare class MockCrmClient implements CrmClient {
     private readonly appointments;
     private readonly orders;
     private readonly loggedMessages;
+    private readonly escalations;
     private nextId;
     private nextOrderId;
     getAvailableDates(): Promise<string[]>;
@@ -14,5 +15,7 @@ export declare class MockCrmClient implements CrmClient {
     listOrders(): CrmOrder[];
     logMessage(input: LogMessageInput): Promise<void>;
     listLoggedMessages(): LogMessageInput[];
+    escalateToAgent(input: EscalateToAgentInput): Promise<EscalateToAgentResult>;
+    listEscalations(): EscalateToAgentInput[];
 }
 //# sourceMappingURL=mockCrmClient.d.ts.map

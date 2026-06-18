@@ -3,10 +3,12 @@ const DEFAULT_AVAILABLE_SLOTS = ["08:00", "08:30", "09:00"];
 const DEFAULT_PRODUCTS = [
     { id: 1, name: "Producto demo", price: 100000, currency: "COP", isActive: true },
 ];
+const DEFAULT_DEPARTMENT = "Comercial";
 export class MockCrmClient {
     appointments = [];
     orders = [];
     loggedMessages = [];
+    escalations = [];
     nextId = 1;
     nextOrderId = 1;
     async getAvailableDates() {
@@ -73,6 +75,13 @@ export class MockCrmClient {
     }
     listLoggedMessages() {
         return [...this.loggedMessages];
+    }
+    async escalateToAgent(input) {
+        this.escalations.push(input);
+        return { department: DEFAULT_DEPARTMENT, agentName: "Asesor demo" };
+    }
+    listEscalations() {
+        return [...this.escalations];
     }
 }
 //# sourceMappingURL=mockCrmClient.js.map

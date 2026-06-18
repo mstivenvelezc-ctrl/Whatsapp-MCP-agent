@@ -77,16 +77,34 @@ describe("dispatchTool", () => {
         expect(session.stage).toBe("scheduling_appointment");
     });
 
-    it("escalate_to_advisor hands off the conversation and stops the bot", async () => {
+    it("escalate_to_advisor routes through the CRM and hands off the conversation", async () => {
         const session = buildSession({ stage: "menu" });
+        const crmClient = new MockCrmClient();
         const result = await dispatchTool(
             "escalate_to_advisor",
-            { reason: "El usuario pidió hablar con una persona" },
-            { session, crmClient: new MockCrmClient() },
+            { reason: "Tiene una plaga de roedores en su local" },
+            { session, crmClient },
         );
 
         expect(result.isError).toBe(false);
+        expect(result.output).toMatchObject({ handedOff: true, department: expect.any(String) });
         expect(session.stage).toBe("handed_off_to_advisor");
+        expect(crmClient.listEscalations()).toHaveLength(1);
+    });
+
+    it("escalate_to_advisor does not hand off the conversation when the CRM call fails", async () => {
+        const session = buildSession({ stage: "menu" });
+        const crmClient = new MockCrmClient();
+        crmClient.escalateToAgent = () => Promise.reject(new Error("CRM unreachable"));
+
+        const result = await dispatchTool(
+            "escalate_to_advisor",
+            { reason: "Tiene una plaga de roedores en su local" },
+            { session, crmClient },
+        );
+
+        expect(result.isError).toBe(true);
+        expect(session.stage).toBe("menu");
     });
 
     it("list_available_dates returns the dates from the CRM", async () => {

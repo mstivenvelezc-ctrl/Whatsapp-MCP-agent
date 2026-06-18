@@ -1,4 +1,4 @@
-import type { CreateAppointmentInput, CreateOrderInput, CrmAppointment, CrmClient, CrmOrder, CrmProduct, LogMessageInput } from "./types.js";
+import type { CreateAppointmentInput, CreateOrderInput, CrmAppointment, CrmClient, CrmOrder, CrmProduct, EscalateToAgentInput, EscalateToAgentResult, LogMessageInput } from "./types.js";
 export interface RestCrmClientConfig {
     baseUrl: string;
     apiKey: string;
@@ -14,6 +14,7 @@ export declare class RestCrmClient implements CrmClient {
     listActiveProducts(): Promise<CrmProduct[]>;
     createOrder(input: CreateOrderInput): Promise<CrmOrder>;
     logMessage(input: LogMessageInput): Promise<void>;
+    escalateToAgent(input: EscalateToAgentInput): Promise<EscalateToAgentResult>;
     private request;
     private parseJson;
 }

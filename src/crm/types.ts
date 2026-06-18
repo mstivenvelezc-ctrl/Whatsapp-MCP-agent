@@ -70,6 +70,17 @@ export interface LogMessageInput {
     messageContent: string;
 }
 
+export interface EscalateToAgentInput {
+    clientPhone: string;
+    clientName?: string;
+    requestText: string;
+}
+
+export interface EscalateToAgentResult {
+    department: string;
+    agentName?: string;
+}
+
 export interface CrmClient {
     getAvailableDates(): Promise<string[]>;
     getAvailableSlots(date: string): Promise<string[]>;
@@ -77,4 +88,5 @@ export interface CrmClient {
     listActiveProducts(): Promise<CrmProduct[]>;
     createOrder(input: CreateOrderInput): Promise<CrmOrder>;
     logMessage(input: LogMessageInput): Promise<void>;
+    escalateToAgent(input: EscalateToAgentInput): Promise<EscalateToAgentResult>;
 }

@@ -6,6 +6,8 @@ import type {
     CrmClient,
     CrmOrder,
     CrmProduct,
+    EscalateToAgentInput,
+    EscalateToAgentResult,
     LogMessageInput,
 } from "./types.js";
 
@@ -84,6 +86,15 @@ export class RestCrmClient implements CrmClient {
             messageContent: input.messageContent,
             ...(input.clientName !== undefined ? { clientName: input.clientName } : {}),
         });
+    }
+
+    async escalateToAgent(input: EscalateToAgentInput): Promise<EscalateToAgentResult> {
+        const response = await this.request("POST", "/api/ai/escalate", {
+            clientPhone: input.clientPhone,
+            requestText: input.requestText,
+            ...(input.clientName !== undefined ? { clientName: input.clientName } : {}),
+        });
+        return (await this.parseJson(response)) as EscalateToAgentResult;
     }
 
     private async request(method: string, path: string, body?: unknown): Promise<Response> {

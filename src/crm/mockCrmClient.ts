@@ -5,6 +5,8 @@ import type {
     CrmClient,
     CrmOrder,
     CrmProduct,
+    EscalateToAgentInput,
+    EscalateToAgentResult,
     LogMessageInput,
 } from "./types.js";
 
@@ -13,11 +15,13 @@ const DEFAULT_AVAILABLE_SLOTS = ["08:00", "08:30", "09:00"];
 const DEFAULT_PRODUCTS: CrmProduct[] = [
     { id: 1, name: "Producto demo", price: 100000, currency: "COP", isActive: true },
 ];
+const DEFAULT_DEPARTMENT = "Comercial";
 
 export class MockCrmClient implements CrmClient {
     private readonly appointments: CrmAppointment[] = [];
     private readonly orders: CrmOrder[] = [];
     private readonly loggedMessages: LogMessageInput[] = [];
+    private readonly escalations: EscalateToAgentInput[] = [];
     private nextId = 1;
     private nextOrderId = 1;
 
@@ -94,5 +98,14 @@ export class MockCrmClient implements CrmClient {
 
     listLoggedMessages(): LogMessageInput[] {
         return [...this.loggedMessages];
+    }
+
+    async escalateToAgent(input: EscalateToAgentInput): Promise<EscalateToAgentResult> {
+        this.escalations.push(input);
+        return { department: DEFAULT_DEPARTMENT, agentName: "Asesor demo" };
+    }
+
+    listEscalations(): EscalateToAgentInput[] {
+        return [...this.escalations];
     }
 }
