@@ -28,7 +28,7 @@ export function getToolDefinitions(): Anthropic.Tool[] {
     return tools.map((tool) => ({
         name: tool.name,
         description: tool.description,
-        input_schema: zodToJsonSchema(tool.inputSchema, { target: "openApi3" }) as Anthropic.Tool.InputSchema,
+        input_schema: zodToJsonSchema(tool.inputSchema, { target: "jsonSchema7" }) as Anthropic.Tool.InputSchema,
     }));
 }
 
