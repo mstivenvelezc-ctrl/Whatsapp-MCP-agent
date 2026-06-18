@@ -38,7 +38,8 @@ export class Agent {
             });
         }
         catch (error) {
-            throw new UpstreamServiceError("anthropic", "Failed to get a response from Anthropic", error);
+            const detail = error instanceof Error ? error.message : String(error);
+            throw new UpstreamServiceError("anthropic", `Failed to get a response from Anthropic: ${detail}`, error);
         }
     }
     async runToolUseBlocks(content, session) {
