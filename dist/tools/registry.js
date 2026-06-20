@@ -1,5 +1,6 @@
 import { zodToJsonSchema } from "zod-to-json-schema";
 import { ToolExecutionError, ToolValidationError } from "./errors.js";
+import { logger } from "../lib/logger.js";
 import { welcomeTool } from "./welcome.tool.js";
 import { selectServiceTool } from "./selectService.tool.js";
 import { listAvailableDatesTool } from "./listAvailableDates.tool.js";
@@ -43,9 +44,17 @@ export async function dispatchTool(toolName, rawInput, context) {
         return { output, isError: false };
     }
     catch (error) {
-        if (error instanceof ToolValidationError || error instanceof ToolExecutionError) {
+        if (error instanceof ToolExecutionError) {
+            const causeDetail = error.cause instanceof Error ? error.cause.message : String(error.cause ?? "");
+            logger.error(`Tool ${toolName} execution failed`, { message: error.message, cause: causeDetail });
             return { output: { error: error.message }, isError: true };
         }
+        if (error instanceof ToolValidationError) {
+            return { output: { error: error.message }, isError: true };
+        }
+        logger.error(`Tool ${toolName} threw an unexpected error`, {
+            error: error instanceof Error ? error.message : String(error),
+        });
         return {
             output: { error: `Error inesperado ejecutando ${toolName}` },
             isError: true,
