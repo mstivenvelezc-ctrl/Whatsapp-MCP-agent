@@ -24,7 +24,7 @@ export function getToolDefinitions() {
     return tools.map((tool) => ({
         name: tool.name,
         description: tool.description,
-        input_schema: zodToJsonSchema(tool.inputSchema, { target: "jsonSchema7" }),
+        inputSchema: zodToJsonSchema(tool.inputSchema, { target: "jsonSchema7" }),
     }));
 }
 export async function dispatchTool(toolName, rawInput, context) {

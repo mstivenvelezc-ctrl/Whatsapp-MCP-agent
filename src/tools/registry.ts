@@ -1,6 +1,6 @@
-import type Anthropic from "@anthropic-ai/sdk";
 import { zodToJsonSchema } from "zod-to-json-schema";
 import type { Tool, ToolContext } from "./types.js";
+import type { LlmTool } from "../llm/types.js";
 import { ToolExecutionError, ToolValidationError } from "./errors.js";
 import { logger } from "../lib/logger.js";
 import { welcomeTool } from "./welcome.tool.js";
@@ -25,11 +25,11 @@ const tools: Tool[] = [
 
 const toolsByName = new Map(tools.map((tool) => [tool.name, tool]));
 
-export function getToolDefinitions(): Anthropic.Tool[] {
+export function getToolDefinitions(): LlmTool[] {
     return tools.map((tool) => ({
         name: tool.name,
         description: tool.description,
-        input_schema: zodToJsonSchema(tool.inputSchema, { target: "jsonSchema7" }) as Anthropic.Tool.InputSchema,
+        inputSchema: zodToJsonSchema(tool.inputSchema, { target: "jsonSchema7" }),
     }));
 }
 

@@ -1,10 +1,9 @@
 import { type Express } from "express";
-import type Anthropic from "@anthropic-ai/sdk";
 import type { SessionStore } from "../agent/session.js";
+import type { LlmModels } from "../llm/factory.js";
 export interface AppDeps {
     sessionStore: SessionStore;
-    anthropic: Anthropic;
-    model: string;
+    models: LlmModels;
     internalAgentSecret: string;
 }
 export declare function createApp(deps: AppDeps): Express;

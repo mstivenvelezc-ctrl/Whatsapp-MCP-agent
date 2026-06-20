@@ -4,8 +4,9 @@ const envSchema = z.object({
     NODE_ENV: z.enum(["development", "test", "production"]).default("development"),
     PORT: z.coerce.number().int().positive().default(3000),
 
-    ANTHROPIC_API_KEY: z.string().min(1, "ANTHROPIC_API_KEY is required"),
     ANTHROPIC_MODEL: z.string().default("claude-sonnet-4-6"),
+    OPENAI_MODEL: z.string().default("gpt-4o"),
+    GEMINI_MODEL: z.string().default("gemini-2.0-flash"),
 
     INTERNAL_AGENT_SECRET: z.string().min(1, "INTERNAL_AGENT_SECRET is required"),
 });

@@ -1,15 +1,14 @@
 import { Router } from "express";
-import type Anthropic from "@anthropic-ai/sdk";
 import { z } from "zod";
 import { Agent } from "../../agent/agent.js";
 import type { SessionStore } from "../../agent/session.js";
 import { RestCrmClient } from "../../crm/restCrmClient.js";
+import { createLlmClient, type LlmModels } from "../../llm/factory.js";
 import { asyncHandler } from "../middleware/asyncHandler.js";
 import { logConversationMessage } from "../conversationLogging.js";
 
 export interface InternalAgentRouterDeps {
-    anthropic: Anthropic;
-    model: string;
+    models: LlmModels;
     sessionStore: SessionStore;
     internalAgentSecret: string;
 }
@@ -21,6 +20,8 @@ const respondBodySchema = z.object({
     phone: z.string().min(1),
     contactName: z.string().optional(),
     message: z.string().min(1),
+    llmProvider: z.enum(["CLAUDE", "OPENAI", "GEMINI"]).default("CLAUDE"),
+    llmApiKey: z.string().min(1),
 });
 
 export function internalAgentRouter(deps: InternalAgentRouterDeps): Router {
@@ -40,10 +41,11 @@ export function internalAgentRouter(deps: InternalAgentRouterDeps): Router {
                 return;
             }
 
-            const { companyId, crmBaseUrl, crmApiKey, phone, contactName, message } = parsed.data;
+            const { companyId, crmBaseUrl, crmApiKey, phone, contactName, message, llmProvider, llmApiKey } = parsed.data;
 
             const crmClient = new RestCrmClient({ baseUrl: crmBaseUrl, apiKey: crmApiKey });
-            const agent = new Agent({ anthropic: deps.anthropic, model: deps.model, crmClient });
+            const llmClient = createLlmClient(llmProvider, llmApiKey, deps.models);
+            const agent = new Agent({ llmClient, crmClient });
 
             const sessionKey = `${companyId}:${phone}`;
             const session = deps.sessionStore.getOrCreate(sessionKey, phone, contactName);

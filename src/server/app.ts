@@ -1,16 +1,15 @@
 import express, { type Express } from "express";
 import helmet from "helmet";
 import rateLimit from "express-rate-limit";
-import type Anthropic from "@anthropic-ai/sdk";
 import type { SessionStore } from "../agent/session.js";
+import type { LlmModels } from "../llm/factory.js";
 import { healthRouter } from "./routes/health.route.js";
 import { internalAgentRouter } from "./routes/internalAgent.route.js";
 import { errorHandler, notFoundHandler } from "./middleware/errorHandler.js";
 
 export interface AppDeps {
     sessionStore: SessionStore;
-    anthropic: Anthropic;
-    model: string;
+    models: LlmModels;
     internalAgentSecret: string;
 }
 
@@ -33,8 +32,7 @@ export function createApp(deps: AppDeps): Express {
         "/internal",
         internalRateLimiter,
         internalAgentRouter({
-            anthropic: deps.anthropic,
-            model: deps.model,
+            models: deps.models,
             sessionStore: deps.sessionStore,
             internalAgentSecret: deps.internalAgentSecret,
         }),

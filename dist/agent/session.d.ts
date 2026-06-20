@@ -1,4 +1,4 @@
-import type Anthropic from "@anthropic-ai/sdk";
+import type { LlmMessage } from "../llm/types.js";
 export type ConversationStage = "welcome" | "menu" | "scheduling_appointment" | "handed_off_to_advisor" | "closed";
 export interface ConversationSession {
     /** Clave interna del store. Para uso multi-tenant suele ser `${companyId}:${phone}`. */
@@ -6,7 +6,7 @@ export interface ConversationSession {
     phone: string;
     contactName: string | undefined;
     stage: ConversationStage;
-    history: Anthropic.MessageParam[];
+    history: LlmMessage[];
     updatedAt: number;
 }
 export declare class SessionStore {

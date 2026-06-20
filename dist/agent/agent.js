@@ -1,9 +1,7 @@
-import { UpstreamServiceError } from "../lib/errors.js";
 import { logger } from "../lib/logger.js";
 import { dispatchTool, getToolDefinitions } from "../tools/registry.js";
 import { SYSTEM_PROMPT } from "./systemPrompt.js";
 const MAX_TOOL_ITERATIONS = 6;
-const MAX_TOKENS = 1024;
 export class Agent {
     config;
     constructor(config) {
@@ -14,57 +12,33 @@ export class Agent {
             logger.info("Skipping bot response: conversation handed off to advisor", { phone: session.phone });
             return undefined;
         }
-        session.history.push({ role: "user", content: userMessage });
+        session.history.push({ role: "user", text: userMessage });
         for (let iteration = 0; iteration < MAX_TOOL_ITERATIONS; iteration++) {
-            const response = await this.createMessage(session.history);
-            session.history.push({ role: "assistant", content: response.content });
-            if (response.stop_reason !== "tool_use") {
-                return extractText(response.content);
+            const response = await this.config.llmClient.createMessage(SYSTEM_PROMPT, session.history, getToolDefinitions());
+            session.history.push({
+                role: "assistant",
+                ...(response.text !== undefined ? { text: response.text } : {}),
+                toolCalls: response.toolCalls,
+            });
+            if (response.stopReason !== "tool_use") {
+                return response.text ?? "";
             }
-            const toolResults = await this.runToolUseBlocks(response.content, session);
-            session.history.push({ role: "user", content: toolResults });
+            const toolResults = await this.runToolCalls(response.toolCalls, session);
+            session.history.push({ role: "user", toolResults });
         }
         logger.warn("Max tool iterations reached", { phone: session.phone });
         return "Lo siento, no pude completar tu solicitud en este momento. ¿Quieres hablar con un asesor?";
     }
-    async createMessage(messages) {
-        try {
-            return await this.config.anthropic.messages.create({
-                model: this.config.model,
-                max_tokens: MAX_TOKENS,
-                system: SYSTEM_PROMPT,
-                tools: getToolDefinitions(),
-                messages,
-            });
-        }
-        catch (error) {
-            const detail = error instanceof Error ? error.message : String(error);
-            throw new UpstreamServiceError("anthropic", `Failed to get a response from Anthropic: ${detail}`, error);
-        }
-    }
-    async runToolUseBlocks(content, session) {
-        const toolUseBlocks = content.filter((block) => block.type === "tool_use");
+    async runToolCalls(toolCalls, session) {
         const results = [];
-        for (const block of toolUseBlocks) {
-            const { output, isError } = await dispatchTool(block.name, block.input, {
+        for (const toolCall of toolCalls) {
+            const { output, isError } = await dispatchTool(toolCall.name, toolCall.input, {
                 session,
                 crmClient: this.config.crmClient,
             });
-            results.push({
-                type: "tool_result",
-                tool_use_id: block.id,
-                content: JSON.stringify(output),
-                is_error: isError,
-            });
+            results.push({ id: toolCall.id, name: toolCall.name, output, isError });
         }
         return results;
     }
-}
-function extractText(content) {
-    return content
-        .filter((block) => block.type === "text")
-        .map((block) => block.text)
-        .join("\n")
-        .trim();
 }
 //# sourceMappingURL=agent.js.map

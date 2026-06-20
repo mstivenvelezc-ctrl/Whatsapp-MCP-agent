@@ -2,7 +2,6 @@ import { beforeEach, describe, expect, it } from "vitest";
 import { loadEnv, resetEnvCacheForTests } from "./env.js";
 
 const VALID_ENV = {
-    ANTHROPIC_API_KEY: "sk-ant-test",
     INTERNAL_AGENT_SECRET: "internal-secret",
 };
 
@@ -17,11 +16,8 @@ describe("loadEnv", () => {
         expect(env.PORT).toBe(3000);
         expect(env.NODE_ENV).toBe("development");
         expect(env.ANTHROPIC_MODEL).toBe("claude-sonnet-4-6");
-    });
-
-    it("throws a descriptive error when a required variable is missing", () => {
-        const { ANTHROPIC_API_KEY, ...incomplete } = VALID_ENV;
-        expect(() => loadEnv(incomplete)).toThrow(/ANTHROPIC_API_KEY/);
+        expect(env.OPENAI_MODEL).toBe("gpt-4o");
+        expect(env.GEMINI_MODEL).toBe("gemini-2.0-flash");
     });
 
     it("throws when INTERNAL_AGENT_SECRET is missing", () => {

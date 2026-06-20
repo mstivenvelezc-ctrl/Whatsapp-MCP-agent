@@ -1,4 +1,4 @@
-import type Anthropic from "@anthropic-ai/sdk";
+import type { LlmMessage } from "../llm/types.js";
 
 export type ConversationStage =
     | "welcome"
@@ -13,7 +13,7 @@ export interface ConversationSession {
     phone: string;
     contactName: string | undefined;
     stage: ConversationStage;
-    history: Anthropic.MessageParam[];
+    history: LlmMessage[];
     updatedAt: number;
 }
 

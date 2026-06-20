@@ -1,9 +1,8 @@
 import { Router } from "express";
-import type Anthropic from "@anthropic-ai/sdk";
 import type { SessionStore } from "../../agent/session.js";
+import { type LlmModels } from "../../llm/factory.js";
 export interface InternalAgentRouterDeps {
-    anthropic: Anthropic;
-    model: string;
+    models: LlmModels;
     sessionStore: SessionStore;
     internalAgentSecret: string;
 }

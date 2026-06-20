@@ -1,6 +1,6 @@
-import type Anthropic from "@anthropic-ai/sdk";
 import type { ToolContext } from "./types.js";
-export declare function getToolDefinitions(): Anthropic.Tool[];
+import type { LlmTool } from "../llm/types.js";
+export declare function getToolDefinitions(): LlmTool[];
 export interface ToolDispatchResult {
     output: unknown;
     isError: boolean;

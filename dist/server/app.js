@@ -17,8 +17,7 @@ export function createApp(deps) {
     app.use(express.json());
     app.use("/health", healthRouter());
     app.use("/internal", internalRateLimiter, internalAgentRouter({
-        anthropic: deps.anthropic,
-        model: deps.model,
+        models: deps.models,
         sessionStore: deps.sessionStore,
         internalAgentSecret: deps.internalAgentSecret,
     }));

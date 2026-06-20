@@ -32,7 +32,7 @@ describe("getToolDefinitions", () => {
         ]);
         for (const definition of definitions) {
             expect(definition.description.length).toBeGreaterThan(0);
-            expect(definition.input_schema).toBeDefined();
+            expect(definition.inputSchema).toBeDefined();
         }
     });
 });
