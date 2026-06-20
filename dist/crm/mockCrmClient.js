@@ -11,6 +11,7 @@ export class MockCrmClient {
     escalations = [];
     nextId = 1;
     nextOrderId = 1;
+    simulateOutOfHours = false;
     async getAvailableDates() {
         return [...DEFAULT_AVAILABLE_DATES];
     }
@@ -78,6 +79,9 @@ export class MockCrmClient {
     }
     async escalateToAgent(input) {
         this.escalations.push(input);
+        if (this.simulateOutOfHours) {
+            return { department: DEFAULT_DEPARTMENT, outOfHours: true };
+        }
         return { department: DEFAULT_DEPARTMENT, agentName: "Asesor demo" };
     }
     listEscalations() {

@@ -24,6 +24,7 @@ export class MockCrmClient implements CrmClient {
     private readonly escalations: EscalateToAgentInput[] = [];
     private nextId = 1;
     private nextOrderId = 1;
+    simulateOutOfHours = false;
 
     async getAvailableDates(): Promise<string[]> {
         return [...DEFAULT_AVAILABLE_DATES];
@@ -102,6 +103,9 @@ export class MockCrmClient implements CrmClient {
 
     async escalateToAgent(input: EscalateToAgentInput): Promise<EscalateToAgentResult> {
         this.escalations.push(input);
+        if (this.simulateOutOfHours) {
+            return { department: DEFAULT_DEPARTMENT, outOfHours: true };
+        }
         return { department: DEFAULT_DEPARTMENT, agentName: "Asesor demo" };
     }
 

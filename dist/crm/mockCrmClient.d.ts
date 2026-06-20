@@ -6,6 +6,7 @@ export declare class MockCrmClient implements CrmClient {
     private readonly escalations;
     private nextId;
     private nextOrderId;
+    simulateOutOfHours: boolean;
     getAvailableDates(): Promise<string[]>;
     getAvailableSlots(_date: string): Promise<string[]>;
     createAppointment(input: CreateAppointmentInput): Promise<CrmAppointment>;

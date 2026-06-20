@@ -79,6 +79,7 @@ export interface EscalateToAgentInput {
 export interface EscalateToAgentResult {
     department: string;
     agentName?: string;
+    outOfHours?: boolean;
 }
 
 export interface CrmClient {

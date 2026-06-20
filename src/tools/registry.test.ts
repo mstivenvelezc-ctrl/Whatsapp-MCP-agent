@@ -107,6 +107,22 @@ describe("dispatchTool", () => {
         expect(session.stage).toBe("menu");
     });
 
+    it("escalate_to_advisor reports outOfHours and does not hand off when no advisor is working", async () => {
+        const session = buildSession({ stage: "menu" });
+        const crmClient = new MockCrmClient();
+        crmClient.simulateOutOfHours = true;
+
+        const result = await dispatchTool(
+            "escalate_to_advisor",
+            { reason: "Tiene una plaga de roedores en su local" },
+            { session, crmClient },
+        );
+
+        expect(result.isError).toBe(false);
+        expect(result.output).toMatchObject({ handedOff: false, outOfHours: true, department: expect.any(String) });
+        expect(session.stage).toBe("menu");
+    });
+
     it("list_available_dates returns the dates from the CRM", async () => {
         const session = buildSession();
         const crmClient = new MockCrmClient();
