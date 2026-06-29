@@ -11,6 +11,7 @@ import { scheduleAppointmentTool } from "./scheduleAppointment.tool.js";
 import { listProductsTool } from "./listProducts.tool.js";
 import { createOrderTool } from "./createOrder.tool.js";
 import { escalateToAdvisorTool } from "./escalateToAdvisor.tool.js";
+import type { AnyARecord } from "dns";
 
 const tools: Tool[] = [
     welcomeTool,
@@ -29,7 +30,7 @@ export function getToolDefinitions(): LlmTool[] {
     return tools.map((tool) => ({
         name: tool.name,
         description: tool.description,
-        inputSchema: zodToJsonSchema(tool.inputSchema, { target: "jsonSchema7" }),
+        inputSchema: zodToJsonSchema(tool.inputSchema as any, { target: "jsonSchema7" }),
     }));
 }
 
